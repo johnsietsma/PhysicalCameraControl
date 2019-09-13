@@ -1,0 +1,11 @@
+{
+    "name": "Unity.PackageExample.Editor.Tests",
+    "references": [
+      "Unity.PackageExample.Editor",
+      "Unity.PackageExample"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

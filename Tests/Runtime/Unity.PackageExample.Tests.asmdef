@@ -1,0 +1,8 @@
+{
+    "name": "Unity.PackageExample.Tests",
+    "references": [
+      "Unity.PackageExample"
+    ],
+    "includePlatforms": [,
+    "excludePlatforms": []
+}

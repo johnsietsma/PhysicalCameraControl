@@ -1,0 +1,10 @@
+{
+    "name": "Unity.PackageExample.Editor",
+    "references": [
+      "Unity.PackageExample"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}
