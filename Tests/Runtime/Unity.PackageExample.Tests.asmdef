@@ -3,6 +3,6 @@
     "references": [
       "Unity.PackageExample"
     ],
-    "includePlatforms": [,
+    "includePlatforms": [],
     "excludePlatforms": []
 }
