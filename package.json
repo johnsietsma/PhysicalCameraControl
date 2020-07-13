@@ -1,5 +1,5 @@
 {
-    "name": "com.unity.hdrp-physical-camera-control",
+    "name": "com.johnsietsma.hdrp-physical-camera-control",
     "version": "0.0.1",
     "displayName": "HDRP Physical Camera Control",
     "description": "A controller for setting exposure and framing shots using the HDRP physical camera.",
