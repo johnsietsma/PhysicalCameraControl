@@ -1,19 +1,19 @@
 {
-    "name": "com.unity.package-example",
-    "version": "1.2.3",
-    "displayName": "Package Example",
-    "description": "This is an example package",
-    "unity": "2019.1",
-    "unityRelease": "0b5",
-    "dependencies": {},
+    "name": "com.unity.hdrp-physical-camera-control",
+    "version": "0.0.1",
+    "displayName": "HDRP Physical Camera Control",
+    "description": "A controller for setting exposure and framing shots using the HDRP physical camera.",
+    "unity": "2019.4",
+    "dependencies": {
+        "com.unity.render-pipelines.high-definition": "7.4.1"
+    },
     "keywords": [
-        "keyword1",
-        "keyword2",
-        "keyword3"
+        "camera",
+        "physical camera"
     ],
     "author": {
-        "name": "Unity",
-        "email": "unity@example.com",
-        "url": "https://www.unity3d.com"
+        "name": "John Sietsma",
+        "email": "john@sietsma.com",
+        "url": "https://www.johnsietsma.com"
     }
 }
