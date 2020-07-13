@@ -27,6 +27,13 @@ public class PhysicalCameraControl : MonoBehaviour
         get => m_CameraData.aperture;
         set => m_CameraData.aperture = value;
     }
+    
+    public float FocalLength
+    {
+        get => m_Camera.focalLength;
+        set => m_Camera.focalLength = value;
+    }
+
 
     Camera m_Camera;
     HDPhysicalCamera m_CameraData;
