@@ -39,7 +39,10 @@ public class PhysicalCameraControllerEditor : Editor
             if (GUILayout.Button("Check")) cameraController.CheckForPhysicalExposure();
         }
 
-        EditorGUILayout.LabelField("Actual Aperture", $"{cameraController.ActualAperture.ToString("F2")}mm");
+        EditorGUILayout.LabelField("Focus Distance", $"{cameraController.FocusDistance.ToString("F2")}");
+        EditorGUILayout.LabelField("Actual aperture", $"{cameraController.ActualAperture.ToString("F2")}mm");
+        //EditorGUILayout.LabelField("Sensor diagonal", $"{cameraController.SensorDiagonal.ToString("F2")}mm");
+        EditorGUILayout.LabelField("FOV (horizontal, vertical)", $"{cameraController.HorizontalFOV.ToString("F2")}, {cameraController.VerticalFOV.ToString("F2")}");
 
         EditorGUILayout.LabelField("ISO");
         EditorGUILayout.BeginHorizontal();
@@ -66,6 +69,7 @@ public class PhysicalCameraControllerEditor : Editor
         EditorGUILayout.EndHorizontal();
         
         EditorGUILayout.LabelField("Focal Length");
+        cameraController.FocalLength = EditorGUILayout.Slider(cameraController.FocalLength, 2, 500);
         EditorGUILayout.BeginHorizontal();
         for (int i = 0; i < FocalLengths.Length; i++)
         {
