@@ -63,7 +63,7 @@ public class PhysicalCameraControllerEditor : Editor
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.LabelField("F/Stop");
-        cameraController.FStop = EditorGUILayout.Slider(cameraController.FStop, 1, 22);
+        cameraController.FStop = EditorGUILayout.Slider(cameraController.FStop, 1f, 32);
 
         EditorGUILayout.BeginHorizontal();
         for (int i = 0; i < FStops.Length; i++)
