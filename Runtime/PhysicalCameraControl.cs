@@ -44,7 +44,7 @@ public class PhysicalCameraControl : MonoBehaviour
     public float VerticalFOV => CalculateFOV(m_Camera.sensorSize.y);
 
 
-    [SerializeField] bool m_PullFocus = default;
+    [SerializeField] bool m_DollyZoom = default;
     [SerializeField] Transform m_FocusObject = default;
 
     Camera m_Camera;
@@ -78,7 +78,9 @@ public class PhysicalCameraControl : MonoBehaviour
 
     void SetFocalLength(float focalLength)
     {
-        if (m_PullFocus && m_FocusObject)
+        if (Mathf.Approximately(m_Camera.focalLength, focalLength)) return;
+        
+        if (m_DollyZoom && m_FocusObject)
         {
             var lengthRatio = focalLength / FocalLength;
             var newDistance = lengthRatio * FocusDistance;
