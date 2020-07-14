@@ -7,9 +7,11 @@ using UnityEngine.Rendering.HighDefinition;
 [RequireComponent(typeof(HDAdditionalCameraData))]
 public class PhysicalCameraControl : MonoBehaviour
 {
+    public Camera Camera => m_Camera;
     public bool IsUsingPhysicalProperties => m_Camera.usePhysicalProperties;
     public bool IsUsingPhysicalExposure { get; private set; }
     public float ActualAperture => m_Camera.focalLength / m_CameraData.aperture;
+    public float ApertureArea => (float)Math.Pow(ActualAperture / 2,2) * Mathf.PI;
 
     public int ISO
     {
@@ -82,6 +84,9 @@ public class PhysicalCameraControl : MonoBehaviour
         
         if (m_DollyZoom && m_FocusObject)
         {
+            // Use the ration of old and new camera focal length and old focus distance to find the new focus distance
+            // Focal length is the distance from sensor to lens. Focal distance is the distance to the scene object we want
+            // to keep at the same screen size.
             var lengthRatio = focalLength / FocalLength;
             var newDistance = lengthRatio * FocusDistance;
             var distanceDelta = newDistance / FocusDistance;

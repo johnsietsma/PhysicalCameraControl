@@ -5,12 +5,12 @@ using UnityEngine;
 public class PhysicalCameraControllerEditor : Editor
 {
     static readonly string[] ShutterSpeedStrings = new[]
-        {"8", "4", "2", "1", "1/2", "1/4", "1/8", "1/15", "1/30", "1/60", "1/125", "1/250", "1/500", "1/1000"};
+        {"1/1000", "1/500", "1/250", "1/125", "1/60", "1/30", "1/15", "1/8", "1/4", "1/2", "1", "2", "4", "8"};
 
     static readonly float[] ShutterSpeeds = new[]
     {
-        8, 4, 2, 1, 1 / 2.0f, 1 / 4.0f, 1 / 8.0f, 1 / 15.0f, 1 / 30.0f, 1 / 60.0f, 1 / 125.0f, 1 / 250.0f, 1 / 500.0f,
-        1 / 1000.0f
+        1 / 1000.0f, 1 / 500.0f, 1 / 250.0f, 1 / 125.0f, 1 / 60.0f, 1 / 30.0f, 1 / 15.0f, 1 / 8.0f, 1 / 4.0f, 1 / 2.0f,
+        1, 2, 4, 8
     };
 
     static readonly string[] ISOStrings = new[] {"100", "200", "400", "800", "1600", "3200", "6400"};
@@ -40,9 +40,10 @@ public class PhysicalCameraControllerEditor : Editor
         }
 
         EditorGUILayout.LabelField("Focus Distance", $"{cameraController.FocusDistance.ToString("F2")}");
-        EditorGUILayout.LabelField("Actual aperture", $"{cameraController.ActualAperture.ToString("F2")}mm");
+        EditorGUILayout.LabelField("Actual aperture (diameter, area)", $"{cameraController.ActualAperture.ToString("F2")}mm, {cameraController.ApertureArea.ToString("F2")}mm^2");
         //EditorGUILayout.LabelField("Sensor diagonal", $"{cameraController.SensorDiagonal.ToString("F2")}mm");
-        EditorGUILayout.LabelField("FOV (horizontal, vertical)", $"{cameraController.HorizontalFOV.ToString("F2")}, {cameraController.VerticalFOV.ToString("F2")}");
+        EditorGUILayout.LabelField("FOV (horizontal, vertical)",
+            $"{cameraController.HorizontalFOV.ToString("F2")}, {cameraController.VerticalFOV.ToString("F2")}");
 
         EditorGUILayout.LabelField("ISO");
         EditorGUILayout.BeginHorizontal();
@@ -58,16 +59,20 @@ public class PhysicalCameraControllerEditor : Editor
         {
             if (GUILayout.Button(ShutterSpeedStrings[i])) cameraController.ShutterSpeed = ShutterSpeeds[i];
         }
+
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.LabelField("F/Stop");
+        cameraController.FStop = EditorGUILayout.Slider(cameraController.FStop, 1, 22);
+
         EditorGUILayout.BeginHorizontal();
         for (int i = 0; i < FStops.Length; i++)
         {
             if (GUILayout.Button(FStopStrings[i])) cameraController.FStop = FStops[i];
         }
+
         EditorGUILayout.EndHorizontal();
-        
+
         EditorGUILayout.LabelField("Focal Length");
         cameraController.FocalLength = EditorGUILayout.Slider(cameraController.FocalLength, 2, 500);
         EditorGUILayout.BeginHorizontal();
@@ -77,5 +82,8 @@ public class PhysicalCameraControllerEditor : Editor
         }
 
         EditorGUILayout.EndHorizontal();
+
+        // Make sure changes get reflected in the Camera component.
+        EditorUtility.SetDirty(cameraController.Camera);
     }
 }
