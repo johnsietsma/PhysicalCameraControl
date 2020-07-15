@@ -3,20 +3,57 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 
+/// <summary>
+/// Controls of the HDRP Physical Camera.
+/// This controller provides feedback and controls like dolly zoom and exposure locking.
 // Reference: http://www.uscoles.com/fstop.htm
 // Reference: https://www.scantips.com/lights/fieldofviewmath.html
+/// </summary>
 [ExecuteInEditMode]
 [RequireComponent(typeof(HDAdditionalCameraData))]
 public class PhysicalCameraControl : MonoBehaviour
 {
     public Camera Camera => m_Camera;
-    public bool IsUsingPhysicalProperties => m_Camera.usePhysicalProperties;
-    public bool IsUsingPhysicalExposure { get; private set; }
-    public bool IsUsingDepthOfField { get; private set; }
-    public bool IsUsingPhysicalDepthOfField { get; private set; }
-    public float ActualAperture => m_Camera.focalLength / m_AdditionalCameraData.aperture;
-    public float ApertureArea => CalculateApertureArea(ActualAperture);
     
+    /// <summary>
+    /// Is this camera using physical properties so that FoV is tied to focal length.
+    /// </summary>
+    public bool IsUsingPhysicalProperties => m_Camera.usePhysicalProperties;
+    
+    /// <summary>
+    /// Is there an Exposure volume override present and active.
+    /// </summary>
+    public bool IsUsingExposure { get; private set; }
+    
+    /// <summary>
+    /// Is the Exposure volume override using the physical camera properties.
+    /// </summary>
+    public bool IsUsingPhysicalExposure { get; private set; }
+    
+    /// <summary>
+    /// Is there a depth of field post-processing volume override present and active.
+    /// </summary>
+    public bool IsUsingDepthOfField { get; private set; }
+    
+    /// <summary>
+    /// Is the depth of field volume override using the physical camera properties.
+    /// </summary>
+    public bool IsUsingPhysicalDepthOfField { get; private set; }
+    
+    /// <summary>
+    /// The aperture width, rather then the f/stop. The physical camera refers to f/stop as aperture.
+    /// </summary>
+    public float ActualAperture => m_Camera.focalLength / m_AdditionalCameraData.aperture;
+    
+    /// <summary>
+    /// The surface area of the aperture. Can be used to exposure calculations. 
+    /// </summary>
+    public float ApertureArea => CalculateApertureArea(ActualAperture);
+
+    public bool IsUsingDollyZoom => m_DollyZoom;
+
+    public bool HasFocusObject => m_FocusObject != null;
+
     public int ISO
     {
         get => m_AdditionalCameraData.iso;
@@ -29,29 +66,48 @@ public class PhysicalCameraControl : MonoBehaviour
         set => SetShutterSpeed(value);
     }
 
+    /// <summary>
+    /// The f/stop or aperture of the lens (as opposed to the aperture width).
+    /// </summary>
     public float FStop
     {
         get => m_AdditionalCameraData.aperture;
         set => SetFStop(value);
     }
 
+    /// <summary>
+    /// The distance between the sensor and the lens.
+    /// </summary>
     public float FocalLength
     {
         get => m_Camera.focalLength;
         set => SetFocalLength(value);
     }
 
+    /// <summary>
+    /// The distance from the lens to the object of interest in the scene. Or 0 if there is no object.
+    /// </summary>
     public float FocusDistance => m_FocusObject ? Vector3.Distance(transform.position, m_FocusObject.position) : 0;
 
+    /// <summary>
+    /// The diagonal length of the sensor.
+    /// </summary>
     public float SensorDiagonal => m_Camera.sensorSize.magnitude;
 
-    public float FOV => CalculateFOV(SensorDiagonal);
-    public float HorizontalFOV => CalculateFOV(m_Camera.sensorSize.x);
-    public float VerticalFOV => CalculateFOV(m_Camera.sensorSize.y);
+    /// <summary>
+    /// The field of view based on the sensor size and focal length of the camera. This will be different to camera
+    /// component's field of view if the camera is not linked to the physical properties.
+    /// </summary>
+    public float HorizontalFOV => CalculateFieldOfView(m_Camera.sensorSize.x);
+    public float VerticalFOV => CalculateFieldOfView(m_Camera.sensorSize.y);
 
-
-    [SerializeField] bool m_DollyZoom = default;
+    [Tooltip("If either the f/stop or shutter speed is changed the other is automatically adjusted to keep the same exposure.")]
     [SerializeField] bool m_LockExposure = default;
+
+    [Tooltip("As the focal length is changed move the camera towards the focus object so that it keeps the same screen size.")]
+    [SerializeField] bool m_DollyZoom = default;
+    
+    [Tooltip("The object of interest in the scene. Used by the dolly zoom.")]
     [SerializeField] Transform m_FocusObject = default;
 
     Camera m_Camera;
@@ -65,8 +121,12 @@ public class PhysicalCameraControl : MonoBehaviour
         CheckForPhysicalExposureAndDepthOfField();
     }
 
+    /// <summary>
+    /// Check the the exposure and depth of field volume overrides are present and using the physical camera.
+    /// </summary>
     public void CheckForPhysicalExposureAndDepthOfField()
     {
+        IsUsingExposure = false;
         IsUsingPhysicalExposure = false;
         IsUsingDepthOfField = false;
         IsUsingPhysicalDepthOfField = false;
@@ -77,12 +137,13 @@ public class PhysicalCameraControl : MonoBehaviour
             var profile = volume.profile;
             if (!IsUsingPhysicalExposure && profile.Has(typeof(Exposure)))
             {
+                IsUsingExposure = true;
                 if (profile.TryGet(typeof(Exposure), out Exposure exp) && exp.active)
                 {
                     IsUsingPhysicalExposure = exp.mode == ExposureMode.UsePhysicalCamera;
                 }
             }
-            
+
             if (!IsUsingPhysicalDepthOfField && profile.Has(typeof(DepthOfField)))
             {
                 IsUsingDepthOfField = true;
@@ -94,15 +155,19 @@ public class PhysicalCameraControl : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Set the focal length of the camera. If dolly zoom is on then this will also chance the camera position.
+    /// </summary>
+    /// <param name="newFocalLength"></param>
     void SetFocalLength(float newFocalLength)
     {
         if (Mathf.Approximately(m_Camera.focalLength, newFocalLength)) return;
-        
+
         if (m_DollyZoom && m_FocusObject)
         {
-            // Use the ration of old and new camera focal length and old focus distance to find the new focus distance
-            // Focal length is the distance from sensor to lens. Focal distance is the distance to the scene object we want
-            // to keep at the same screen size.
+            // Use the ratio of old and new camera focal length and old focus distance to find the new focus distance.
+            // Focal length is the distance from sensor to lens. Focal distance is the distance to the scene object we
+            // want to keep at the same screen size.
             var lengthRatio = newFocalLength / FocalLength;
             var newDistance = lengthRatio * FocusDistance;
             var distanceDelta = newDistance / FocusDistance;
@@ -113,27 +178,36 @@ public class PhysicalCameraControl : MonoBehaviour
         m_Camera.focalLength = newFocalLength;
     }
 
+    /// <summary>
+    /// Set the shutter speed. This will also adjust the aperture of the exposure is locked.
+    /// </summary>
     void SetShutterSpeed(float newShutterSpeed)
     {
         if (Mathf.Approximately(m_AdditionalCameraData.shutterSpeed, newShutterSpeed)) return;
 
         if (m_LockExposure)
         {
+            // Scale the aperture area by the change in light level of the new shutter speed
             var shutterSpeedRatio = ShutterSpeed / newShutterSpeed;
             var newArea = ApertureArea * shutterSpeedRatio;
-            m_AdditionalCameraData.aperture = FocalLength / CalculateApertureFromArea(newArea); // Because aperture is actually f/stops!
+            m_AdditionalCameraData.aperture =
+                FocalLength / CalculateApertureFromArea(newArea); // Because aperture is actually f/stops!
         }
 
         m_AdditionalCameraData.shutterSpeed = newShutterSpeed;
     }
-    
+
+    /// <summary>
+    /// Set the F/Stop. This will also set the shutter speed if the exposure is locked.
+    /// </summary>
     void SetFStop(float newFStop)
     {
         var newAperture = FocalLength / newFStop;
-        if (Mathf.Approximately(m_AdditionalCameraData.shutterSpeed, newAperture)) return;
+        if (Mathf.Approximately(m_AdditionalCameraData.aperture, newAperture)) return;
 
         if (m_LockExposure)
         {
+            // Scale the shutter speed by the change in light level of the new aperture
             var newApertureArea = CalculateApertureArea(newAperture);
             var apertureAreaRatio = ApertureArea / newApertureArea;
             m_AdditionalCameraData.shutterSpeed = ShutterSpeed * apertureAreaRatio;
@@ -142,24 +216,32 @@ public class PhysicalCameraControl : MonoBehaviour
         m_AdditionalCameraData.aperture = newFStop;
     }
 
-    float CalculateFOV(float size)
+    /// <summary>
+    /// Calculate the field of view based on sensor size and the current focal length.
+    /// </summary>
+    float CalculateFieldOfView(float sensorSize)
     {
-        return Mathf.Rad2Deg * 2 * Mathf.Atan2(size, 2 * FocalLength);
+        return Mathf.Rad2Deg * 2 * Mathf.Atan2(sensorSize, 2 * FocalLength);
     }
 
-    float CalculateFocalLength(float fov)
+    float CalculateFocalLength(float fieldOfView)
     {
-        return (m_Camera.sensorSize.x / 2) / Mathf.Tan(fov * Mathf.Deg2Rad / 2);
+        return (m_Camera.sensorSize.x / 2) / Mathf.Tan(fieldOfView * Mathf.Deg2Rad / 2);
     }
 
+    /// <summary>
+    /// Calculate the aperture width from the given aperture area.
+    /// </summary>
     float CalculateApertureFromArea(float area)
     {
         return Mathf.Sqrt(area / Mathf.PI) * 2;
     }
-    
+
+    /// <summary>
+    /// Calculate the aperture area based on the given aperture width.
+    /// </summary>
     float CalculateApertureArea(float aperture)
     {
-        return (float)Math.Pow(aperture / 2,2) * Mathf.PI;
+        return (float) Math.Pow(aperture / 2, 2) * Mathf.PI;
     }
-
 }

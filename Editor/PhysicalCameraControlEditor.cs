@@ -27,18 +27,30 @@ public class PhysicalCameraControllerEditor : Editor
         base.OnInspectorGUI();
 
         var cameraController = target as PhysicalCameraControl;
+
+        if (cameraController.IsUsingDollyZoom && !cameraController.HasFocusObject)
+        {
+            EditorGUILayout.LabelField("WARNING: Using dolly zoom without a focus object.");
+        }
+        
         if (!cameraController.IsUsingPhysicalProperties)
         {
             EditorGUILayout.LabelField("NOT USING PHYSICAL PROPERTIES! Click \"Link FOV to Physical Camera\" above.");
         }
-
+        
         bool shouldCheckExposureAndDepthOfField = false;
-        if (!cameraController.IsUsingPhysicalExposure)
+        if (!cameraController.IsUsingExposure)
         {
             EditorGUILayout.LabelField(
-                "NOT USING PHYSICAL EXPOSURE! Add an exposure volume override with \"Use Physical Camera\".");
+                "NOT USING EXPOSURE! Add an exposure volume override with the mode \"Use Physical Camera\".");
             shouldCheckExposureAndDepthOfField = true;
-            if (GUILayout.Button("Check")) cameraController.CheckForPhysicalExposureAndDepthOfField();
+        }
+
+        if (cameraController.IsUsingExposure && !cameraController.IsUsingPhysicalExposure)
+        {
+            EditorGUILayout.LabelField(
+                "NOT USING PHYSICAL EXPOSURE! Add an exposure volume override with the mode \"Use Physical Camera\".");
+            shouldCheckExposureAndDepthOfField = true;
         }
 
         if (cameraController.IsUsingDepthOfField && !cameraController.IsUsingPhysicalDepthOfField)
@@ -61,7 +73,7 @@ public class PhysicalCameraControllerEditor : Editor
         EditorGUILayout.LabelField("FOV (horizontal, vertical)",
             $"{cameraController.HorizontalFOV.ToString("F2")}, {cameraController.VerticalFOV.ToString("F2")}");
 
-        EditorGUILayout.LabelField("ISO");
+        EditorGUILayout.LabelField("ISO", cameraController.ISO.ToString());
         EditorGUILayout.BeginHorizontal();
         for (int i = 0; i < ISOs.Length; i++)
         {
@@ -70,7 +82,7 @@ public class PhysicalCameraControllerEditor : Editor
 
         EditorGUILayout.EndHorizontal();
 
-        EditorGUILayout.LabelField("Shutter Speed");
+        EditorGUILayout.LabelField($"Shutter Speed (sec,1/sec)", $"{cameraController.ShutterSpeed.ToString("F2")}, {(1/cameraController.ShutterSpeed).ToString("F2")}");
         EditorGUILayout.BeginHorizontal();
         for (int i = 0; i < ShutterSpeeds.Length; i++)
         {
