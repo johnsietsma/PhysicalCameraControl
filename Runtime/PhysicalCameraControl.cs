@@ -137,18 +137,18 @@ public class PhysicalCameraControl : MonoBehaviour
             var profile = volume.profile;
             if (!IsUsingPhysicalExposure && profile.Has(typeof(Exposure)))
             {
-                IsUsingExposure = true;
                 if (profile.TryGet(typeof(Exposure), out Exposure exp) && exp.active)
                 {
+                    IsUsingExposure = true;
                     IsUsingPhysicalExposure = exp.mode == ExposureMode.UsePhysicalCamera;
                 }
             }
 
             if (!IsUsingPhysicalDepthOfField && profile.Has(typeof(DepthOfField)))
             {
-                IsUsingDepthOfField = true;
                 if (profile.TryGet(typeof(DepthOfField), out DepthOfField dof) && dof.active)
                 {
+                    IsUsingDepthOfField = true;
                     IsUsingPhysicalDepthOfField = dof.focusMode == DepthOfFieldMode.UsePhysicalCamera;
                 }
             }
