@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 
+// Reference: http://www.uscoles.com/fstop.htm
+// Reference: https://www.scantips.com/lights/fieldofviewmath.html
 [ExecuteInEditMode]
 [RequireComponent(typeof(HDAdditionalCameraData))]
 public class PhysicalCameraControl : MonoBehaviour
@@ -10,6 +12,8 @@ public class PhysicalCameraControl : MonoBehaviour
     public Camera Camera => m_Camera;
     public bool IsUsingPhysicalProperties => m_Camera.usePhysicalProperties;
     public bool IsUsingPhysicalExposure { get; private set; }
+    public bool IsUsingDepthOfField { get; private set; }
+    public bool IsUsingPhysicalDepthOfField { get; private set; }
     public float ActualAperture => m_Camera.focalLength / m_AdditionalCameraData.aperture;
     public float ApertureArea => CalculateApertureArea(ActualAperture);
     
@@ -58,12 +62,14 @@ public class PhysicalCameraControl : MonoBehaviour
         m_Camera = GetComponent<Camera>();
         m_AdditionalCameraData = GetComponent<HDAdditionalCameraData>().physicalParameters;
 
-        CheckForPhysicalExposure();
+        CheckForPhysicalExposureAndDepthOfField();
     }
 
-    public void CheckForPhysicalExposure()
+    public void CheckForPhysicalExposureAndDepthOfField()
     {
         IsUsingPhysicalExposure = false;
+        IsUsingDepthOfField = false;
+        IsUsingPhysicalDepthOfField = false;
 
         var volumes = FindObjectsOfType<Volume>();
         foreach (var volume in volumes)
@@ -74,6 +80,15 @@ public class PhysicalCameraControl : MonoBehaviour
                 if (profile.TryGet(typeof(Exposure), out Exposure exp) && exp.active)
                 {
                     IsUsingPhysicalExposure = exp.mode == ExposureMode.UsePhysicalCamera;
+                }
+            }
+            
+            if (!IsUsingPhysicalDepthOfField && profile.Has(typeof(DepthOfField)))
+            {
+                IsUsingDepthOfField = true;
+                if (profile.TryGet(typeof(DepthOfField), out DepthOfField dof) && dof.active)
+                {
+                    IsUsingPhysicalDepthOfField = dof.focusMode == DepthOfFieldMode.UsePhysicalCamera;
                 }
             }
         }
@@ -127,7 +142,6 @@ public class PhysicalCameraControl : MonoBehaviour
         m_AdditionalCameraData.aperture = newFStop;
     }
 
-    // Reference: https://www.scantips.com/lights/fieldofviewmath.html
     float CalculateFOV(float size)
     {
         return Mathf.Rad2Deg * 2 * Mathf.Atan2(size, 2 * FocalLength);

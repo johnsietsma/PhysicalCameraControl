@@ -32,15 +32,31 @@ public class PhysicalCameraControllerEditor : Editor
             EditorGUILayout.LabelField("NOT USING PHYSICAL PROPERTIES! Click \"Link FOV to Physical Camera\" above.");
         }
 
+        bool shouldCheckExposureAndDepthOfField = false;
         if (!cameraController.IsUsingPhysicalExposure)
         {
             EditorGUILayout.LabelField(
                 "NOT USING PHYSICAL EXPOSURE! Add an exposure volume override with \"Use Physical Camera\".");
-            if (GUILayout.Button("Check")) cameraController.CheckForPhysicalExposure();
+            shouldCheckExposureAndDepthOfField = true;
+            if (GUILayout.Button("Check")) cameraController.CheckForPhysicalExposureAndDepthOfField();
         }
 
+        if (cameraController.IsUsingDepthOfField && !cameraController.IsUsingPhysicalDepthOfField)
+        {
+            EditorGUILayout.LabelField(
+                "NOT USING PHYSICAL DEPTH OF FIELD! Change the Depth of Field focus mode to \"Use Physical Camera\".");
+            shouldCheckExposureAndDepthOfField = true;
+        }
+
+        if (shouldCheckExposureAndDepthOfField)
+        {
+            if (GUILayout.Button("Check")) cameraController.CheckForPhysicalExposureAndDepthOfField();
+        }
+
+
         EditorGUILayout.LabelField("Focus Distance", $"{cameraController.FocusDistance.ToString("F2")}");
-        EditorGUILayout.LabelField("Actual aperture (diameter, area)", $"{cameraController.ActualAperture.ToString("F2")}mm, {cameraController.ApertureArea.ToString("F2")}mm^2");
+        EditorGUILayout.LabelField("Actual aperture (diameter, area)",
+            $"{cameraController.ActualAperture.ToString("F2")}mm, {cameraController.ApertureArea.ToString("F2")}mm^2");
         //EditorGUILayout.LabelField("Sensor diagonal", $"{cameraController.SensorDiagonal.ToString("F2")}mm");
         EditorGUILayout.LabelField("FOV (horizontal, vertical)",
             $"{cameraController.HorizontalFOV.ToString("F2")}, {cameraController.VerticalFOV.ToString("F2")}");
@@ -51,6 +67,7 @@ public class PhysicalCameraControllerEditor : Editor
         {
             if (GUILayout.Button(ISOStrings[i])) cameraController.ISO = ISOs[i];
         }
+
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.LabelField("Shutter Speed");
