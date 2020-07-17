@@ -66,7 +66,8 @@ public class PhysicalCameraControllerEditor : Editor
         }
 
 
-        EditorGUILayout.LabelField("Focus Distance", $"{cameraController.FocusDistance.ToString("F2")}");
+        cameraController.FocusObject = EditorGUILayout.ObjectField("Focus Object", cameraController.FocusObject, typeof(Transform), true) as Transform;
+        EditorGUILayout.LabelField("Focus Distance", $"{cameraController.FocusDistance.ToString("F2")}m");
         EditorGUILayout.LabelField("Actual aperture (diameter, area)",
             $"{cameraController.ActualAperture.ToString("F2")}mm, {cameraController.ApertureArea.ToString("F2")}mm^2");
         //EditorGUILayout.LabelField("Sensor diagonal", $"{cameraController.SensorDiagonal.ToString("F2")}mm");

@@ -14,37 +14,37 @@ using UnityEngine.Rendering.HighDefinition;
 public class PhysicalCameraControl : MonoBehaviour
 {
     public Camera Camera => m_Camera;
-    
+
     /// <summary>
     /// Is this camera using physical properties so that FoV is tied to focal length.
     /// </summary>
     public bool IsUsingPhysicalProperties => m_Camera.usePhysicalProperties;
-    
+
     /// <summary>
     /// Is there an Exposure volume override present and active.
     /// </summary>
     public bool IsUsingExposure { get; private set; }
-    
+
     /// <summary>
     /// Is the Exposure volume override using the physical camera properties.
     /// </summary>
     public bool IsUsingPhysicalExposure { get; private set; }
-    
+
     /// <summary>
     /// Is there a depth of field post-processing volume override present and active.
     /// </summary>
     public bool IsUsingDepthOfField { get; private set; }
-    
+
     /// <summary>
     /// Is the depth of field volume override using the physical camera properties.
     /// </summary>
     public bool IsUsingPhysicalDepthOfField { get; private set; }
-    
+
     /// <summary>
     /// The aperture width, rather then the f/stop. The physical camera refers to f/stop as aperture.
     /// </summary>
     public float ActualAperture => m_Camera.focalLength / m_AdditionalCameraData.aperture;
-    
+
     /// <summary>
     /// The surface area of the aperture. Can be used to exposure calculations. 
     /// </summary>
@@ -85,9 +85,18 @@ public class PhysicalCameraControl : MonoBehaviour
     }
 
     /// <summary>
-    /// The distance from the lens to the object of interest in the scene. Or 0 if there is no object.
+    /// The object that defines the focal plane.
     /// </summary>
-    public float FocusDistance => m_FocusObject ? Vector3.Distance(transform.position, m_FocusObject.position) : 0;
+    public Transform FocusObject
+    {
+        get => m_FocusObject;
+        set => SetFocusObject(value);
+    }
+
+    /// <summary>
+    /// The distance from the lens to the focus plane in the scene. Or 0 if there is no focus object/plane.
+    /// </summary>
+    public float FocusDistance => Vector3.Distance(m_FocalPlane.ClosestPointOnPlane(transform.position), transform.position);
 
     /// <summary>
     /// The diagonal length of the sensor.
@@ -99,19 +108,23 @@ public class PhysicalCameraControl : MonoBehaviour
     /// component's field of view if the camera is not linked to the physical properties.
     /// </summary>
     public float HorizontalFOV => CalculateFieldOfView(m_Camera.sensorSize.x);
+
     public float VerticalFOV => CalculateFieldOfView(m_Camera.sensorSize.y);
 
-    [Tooltip("If either the f/stop or shutter speed is changed the other is automatically adjusted to keep the same exposure.")]
-    [SerializeField] bool m_LockExposure = default;
+    [Tooltip(
+        "If either the f/stop or shutter speed is changed the other is automatically adjusted to keep the same exposure.")]
+    [SerializeField]
+    bool m_LockExposure = default;
 
-    [Tooltip("As the focal length is changed move the camera towards the focus object so that it keeps the same screen size.")]
-    [SerializeField] bool m_DollyZoom = default;
-    
-    [Tooltip("The object of interest in the scene. Used by the dolly zoom.")]
-    [SerializeField] Transform m_FocusObject = default;
+    [Tooltip(
+        "As the focal length is changed move the camera towards the focus object so that it keeps the same screen size.")]
+    [SerializeField]
+    bool m_DollyZoom = default;
 
+    Transform m_FocusObject = default;
     Camera m_Camera;
     HDPhysicalCamera m_AdditionalCameraData;
+    Plane m_FocalPlane = new Plane();
 
     void OnEnable()
     {
@@ -163,16 +176,13 @@ public class PhysicalCameraControl : MonoBehaviour
     {
         if (Mathf.Approximately(m_Camera.focalLength, newFocalLength)) return;
 
-        if (m_DollyZoom && m_FocusObject)
+        if (m_DollyZoom && HasFocusObject)
         {
             // Use the ratio of old and new camera focal length and old focus distance to find the new focus distance.
-            // Focal length is the distance from sensor to lens. Focal distance is the distance to the scene object we
-            // want to keep at the same screen size.
+            // Focal length is the distance from sensor to lens. Focal distance is the distance to the focal plane.
             var lengthRatio = newFocalLength / FocalLength;
             var newDistance = lengthRatio * FocusDistance;
-            var distanceDelta = newDistance / FocusDistance;
-            var moveVector = m_FocusObject.position - transform.position;
-            transform.position = m_FocusObject.position - moveVector * distanceDelta;
+            transform.position += transform.forward * (FocusDistance-newDistance);
         }
 
         m_Camera.focalLength = newFocalLength;
@@ -214,6 +224,15 @@ public class PhysicalCameraControl : MonoBehaviour
         }
 
         m_AdditionalCameraData.aperture = newFStop;
+    }
+
+    void SetFocusObject(Transform focusObject)
+    {
+        if (focusObject != null)
+        {
+            m_FocusObject = focusObject;
+            m_FocalPlane = new Plane(-transform.forward, m_FocusObject.position);
+        }
     }
 
     /// <summary>
