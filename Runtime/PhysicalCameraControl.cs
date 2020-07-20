@@ -96,7 +96,8 @@ public class PhysicalCameraControl : MonoBehaviour
     /// <summary>
     /// The distance from the lens to the focus plane in the scene. Or 0 if there is no focus object/plane.
     /// </summary>
-    public float FocusDistance => Vector3.Distance(m_FocalPlane.ClosestPointOnPlane(transform.position), transform.position);
+    public float FocusDistance =>
+        Vector3.Distance(m_FocalPlane.ClosestPointOnPlane(transform.position), transform.position);
 
     /// <summary>
     /// The diagonal length of the sensor.
@@ -121,7 +122,7 @@ public class PhysicalCameraControl : MonoBehaviour
     [SerializeField]
     bool m_DollyZoom = default;
 
-    Transform m_FocusObject = default;
+    [HideInInspector] [SerializeField] Transform m_FocusObject = default;
     Camera m_Camera;
     HDPhysicalCamera m_AdditionalCameraData;
     Plane m_FocalPlane = new Plane();
@@ -182,7 +183,7 @@ public class PhysicalCameraControl : MonoBehaviour
             // Focal length is the distance from sensor to lens. Focal distance is the distance to the focal plane.
             var lengthRatio = newFocalLength / FocalLength;
             var newDistance = lengthRatio * FocusDistance;
-            transform.position += transform.forward * (FocusDistance-newDistance);
+            transform.position += transform.forward * (FocusDistance - newDistance);
         }
 
         m_Camera.focalLength = newFocalLength;
