@@ -19,7 +19,7 @@ Tested with Unity 2019.4.0f1 and HDRP 7.3.1 and 7.4.1.
 
 [![Framing and Exposure using Unity's HDRP Physical Camera](https://img.youtube.com/vi/loddo4XcYng/0.jpg)](https://youtu.be/loddo4XcYng)
 
-## Dolly Zoom
+## Dolly Zoom (to help set Focal Length)
 
 ![Dolly Zoom](./Documentation~/DollyZoom.gif)
 
