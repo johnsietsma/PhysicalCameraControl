@@ -8,7 +8,7 @@ An editor control for the Unity HDRP physical camera.
 * Exposure locking by automatically adjusting shutter speed or aperture settings.
 * Dolly zoom to make it easy to frame a shot while adjusting the focal length.  
 
-Tested with Unity 2019.4.0f1 and HDRP 7.3.1 and 7.4.1.
+Tested with Unity 2022.3.0 and HDRP 14.0.7.
 
 ## Usage
 

@@ -43,7 +43,7 @@ public class PhysicalCameraControl : MonoBehaviour
     /// <summary>
     /// The aperture width, rather then the f/stop. The physical camera refers to f/stop as aperture.
     /// </summary>
-    public float ActualAperture => m_Camera.focalLength / m_AdditionalCameraData.aperture;
+    public float ActualAperture => m_Camera.focalLength / m_Camera.aperture;
 
     /// <summary>
     /// The surface area of the aperture. Can be used to exposure calculations. 
@@ -56,13 +56,13 @@ public class PhysicalCameraControl : MonoBehaviour
 
     public int ISO
     {
-        get => m_AdditionalCameraData.iso;
-        set => m_AdditionalCameraData.iso = value;
+        get => m_Camera.iso;
+        set => m_Camera.iso = value;
     }
 
     public float ShutterSpeed
     {
-        get => m_AdditionalCameraData.shutterSpeed;
+        get => m_Camera.shutterSpeed;
         set => SetShutterSpeed(value);
     }
 
@@ -71,7 +71,7 @@ public class PhysicalCameraControl : MonoBehaviour
     /// </summary>
     public float FStop
     {
-        get => m_AdditionalCameraData.aperture;
+        get => m_Camera.aperture;
         set => SetFStop(value);
     }
 
@@ -124,14 +124,11 @@ public class PhysicalCameraControl : MonoBehaviour
 
     [HideInInspector] [SerializeField] Transform m_FocusObject = default;
     Camera m_Camera;
-    HDPhysicalCamera m_AdditionalCameraData;
     Plane m_FocalPlane = new Plane();
 
     void OnEnable()
     {
         m_Camera = GetComponent<Camera>();
-        m_AdditionalCameraData = GetComponent<HDAdditionalCameraData>().physicalParameters;
-
         CheckForPhysicalExposureAndDepthOfField();
     }
 
@@ -194,18 +191,18 @@ public class PhysicalCameraControl : MonoBehaviour
     /// </summary>
     void SetShutterSpeed(float newShutterSpeed)
     {
-        if (Mathf.Approximately(m_AdditionalCameraData.shutterSpeed, newShutterSpeed)) return;
+        if (Mathf.Approximately(m_Camera.shutterSpeed, newShutterSpeed)) return;
 
         if (m_LockExposure)
         {
             // Scale the aperture area by the change in light level of the new shutter speed
             var shutterSpeedRatio = ShutterSpeed / newShutterSpeed;
             var newArea = ApertureArea * shutterSpeedRatio;
-            m_AdditionalCameraData.aperture =
+            m_Camera.aperture =
                 FocalLength / CalculateApertureFromArea(newArea); // Because aperture is actually f/stops!
         }
 
-        m_AdditionalCameraData.shutterSpeed = newShutterSpeed;
+        m_Camera.shutterSpeed = newShutterSpeed;
     }
 
     /// <summary>
@@ -214,17 +211,17 @@ public class PhysicalCameraControl : MonoBehaviour
     void SetFStop(float newFStop)
     {
         var newAperture = FocalLength / newFStop;
-        if (Mathf.Approximately(m_AdditionalCameraData.aperture, newAperture)) return;
+        if (Mathf.Approximately(m_Camera.aperture, newAperture)) return;
 
         if (m_LockExposure)
         {
             // Scale the shutter speed by the change in light level of the new aperture
             var newApertureArea = CalculateApertureArea(newAperture);
             var apertureAreaRatio = ApertureArea / newApertureArea;
-            m_AdditionalCameraData.shutterSpeed = ShutterSpeed * apertureAreaRatio;
+            m_Camera.shutterSpeed = ShutterSpeed * apertureAreaRatio;
         }
 
-        m_AdditionalCameraData.aperture = newFStop;
+        m_Camera.aperture = newFStop;
     }
 
     void SetFocusObject(Transform focusObject)
